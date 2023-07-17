@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/future_land_use_simulator" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

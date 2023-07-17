@@ -1,0 +1,17 @@
+flowchart LR
+    yr[Year]---scen([Scenario])
+    popcon[Population Constraint]---|Growth|scen
+    loc[Location]---|District/region or study area|scen
+    tempinc[Temperature Increase Constraint]---scen
+    scen([Scenario])==>input([User Inputs])
+    popras[Population Raster]---input
+    suitras[Suitability Rasters]---|For Ag, Con, Urb uses|input
+    lstcsv[LST CSV]---input
+    lcras[Land Cover Raster]---|Scale dependent|input
+    input==>ga([Genetic Algorithm])
+    gen[Generations]---|Number of iterations in Algorithm|ga
+    mutcros[Mutation & Crossover]---|Probability of change|ga
+    exinsuf[Excess & Insufficient Land Use]---|Determinants of preference|ga
+    pop[Population]---|Starting number of individuals|ga
+    prob[Probability]---|Probability of having a certain starting suitability level|ga
+    ga==>out[[Output]]
