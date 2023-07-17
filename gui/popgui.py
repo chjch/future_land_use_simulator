@@ -10,7 +10,6 @@ from .future_land_use_simulator_dialog import FutureLandUseSimulatorDialog
 
 def dist_populate(gui):
     reg_name = gui.dlg.cb_region.currentText()
-    print(reg_name)
 
     if reg_name == "N/A":
         gui.dlg.cb_district.addItems(config.test)
