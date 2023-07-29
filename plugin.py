@@ -9,7 +9,7 @@
         begin                : 2023-03-24
         git sha              : $Format:%H$
         copyright            : (C) 2023 by GALUP
-        email                : chj.chen@ufl.edu@ufl.edu
+        email                : chj.chen@ufl.edu
  ***************************************************************************/
 
 /***************************************************************************
@@ -24,37 +24,27 @@
 
 import os
 import sys
-from functools import partial
-
+from pathlib import Path
+from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QProgressBar
 from qgis.core import *
-from qgis.utils import iface
 from qgis.core import (
     Qgis,
     QgsApplication,
-    QgsProcessingParameterVectorDestination,
 )
-
-from PyQt5 import QtWidgets
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.gui import QgisInterface, QgsMessageBarItem
+from typing import Optional
 
 sys.path.append(".lib")
 from .lib.maintask import FutureLandUseSimulatorTask
 
 sys.path.append(".gui")
-from .gui.popgui import (
-    dist_populate,
-    csv_calc,
-    disable_gpkg,
-    disable_shp,
-    disable_study_area,
-)
+
 # Initialize Qt resources from file resources.py
-from .resources import *
 
 # Import the code for the dialog
-from .gui.future_land_use_simulator_dialog import FutureLandUseSimulatorDialog
+from .gui.future_land_use_simulator_dlg import FutureLandUseSimulatorDialog
 
 
 class FutureLandUseSimulator:
@@ -62,23 +52,22 @@ class FutureLandUseSimulator:
 
     FUTURE_SCENARIO = "FUTURE_SCENARIO"
 
-    def __init__(self, iface):
-        """Constructor.
+    def __init__(self, iface: QgisInterface):
+        """Constructor"""
 
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
         # Save reference to the QGIS interface
-
         self.iface = iface
+        self.dlg: Optional[FutureLandUseSimulatorDialog] = None  # will be set in run()
+        self.progress_bar: Optional[QProgressBar] = None # will be set in run()
+        self.task: Optional[QgsTask] = None  # will be set in run()
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
         locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            self.plugin_dir, "i18n", "UrbanAreaDemand_{}.qm".format(locale)
+            self.plugin_dir,
+            "i18n",
+            "Future_Land_Use_Simulator_{}.qm".format(locale)
         )
 
         if os.path.exists(locale_path):
@@ -88,7 +77,7 @@ class FutureLandUseSimulator:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr("&UrbanAreaDemand")
+        self.menu = self.tr("&FutureLandUseSimulator")
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -107,19 +96,22 @@ class FutureLandUseSimulator:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate("UrbanAreaDemand", message)
+        return QCoreApplication.translate(
+            "FutureLandUseSimulator",
+            message
+        )
 
     def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None,
+            self,
+            icon_path,
+            text,
+            callback,
+            enabled_flag=True,
+            add_to_menu=True,
+            add_to_toolbar=True,
+            status_tip=None,
+            whats_this=None,
+            parent=None,
     ):
         """Add a toolbar icon to the toolbar.
 
@@ -182,32 +174,24 @@ class FutureLandUseSimulator:
 
         return action
 
-    def initAlgorith(self):
-        self.addParameter(
-            QgsProcessingParameterVectorDestination(
-                self.OUTPUT, self.tr("Output layer")
-            )
-        )
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ":/plugins/future_land_use_simulator/icon.png"
+        icon_path = str(Path(__file__).resolve().parent / "icon.png")
         self.add_action(
             icon_path,
             text=self.tr("Future Land Use Simulator"),
             callback=self.run,
             parent=self.iface.mainWindow(),
         )
-
         # will be set False in run()
         self.first_start = True
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(self.tr("&UrbanAreaDemand"), action)
+            self.iface.removePluginMenu(
+                self.tr("&FutureLandUseSimulator"), action
+            )
             self.iface.removeToolBarIcon(action)
 
     def run(self):
@@ -215,32 +199,61 @@ class FutureLandUseSimulator:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
+        if self.first_start:
             self.first_start = False
-            self.dlg = FutureLandUseSimulatorDialog()
-            self.dlg.button_box.button(self.dlg.button_box.Ok).setText("Run")
-            self.dlg.button_box.button(self.dlg.button_box.Cancel).setText("Close")
-            self.dlg.button_box.button(self.dlg.button_box.Cancel).clicked.connect(
-                self.dlg.close
+            self.dlg = FutureLandUseSimulatorDialog(self.iface)
+            self.dlg.tabWidget.setCurrentIndex(0)
+            self.dlg.button_box.button(
+                self.dlg.button_box.Ok
+            ).setText("Run")  # change button text to Run default is Ok
+            self.dlg.button_box.button(
+                self.dlg.button_box.Cancel
+            ).setText("Close")  # change button text to Close default is Cancel
+            self.dlg.button_box.button(
+                self.dlg.button_box.Cancel
+            ).clicked.connect(self.dlg.close)
+            self.dlg.cb_region.currentTextChanged.connect(
+                self.dlg.populate_district
             )
-
-            self.dlg.cb_region.currentTextChanged.connect(partial(dist_populate, self))
             self.dlg.cb_district.currentTextChanged.connect(
-                partial(disable_study_area, self)
+                self.dlg.disable_study_area
             )
-            self.dlg.cb_district.currentTextChanged.connect(partial(csv_calc, self))
-            self.dlg.cb_region.currentTextChanged.connect(partial(csv_calc, self))
-            self.dlg.cb_year.currentTextChanged.connect(partial(csv_calc, self))
-            self.dlg.check_shp.toggled.connect(partial(disable_gpkg, self))
-            self.dlg.check_gpk.toggled.connect(partial(disable_gpkg, self))
-            self.dlg.check_shp.toggled.connect(partial(disable_shp, self))
-            self.dlg.check_gpk.toggled.connect(partial(disable_shp, self))
-
+            # cb_region, cb_district, and cb_year all trigger read_pop_project
+            self.dlg.cb_district.currentTextChanged.connect(
+                self.dlg.read_pop_project
+            )
+            self.dlg.cb_region.currentTextChanged.connect(
+                self.dlg.read_pop_project
+            )
+            self.dlg.cb_year.currentTextChanged.connect(
+                self.dlg.read_pop_project
+            )
+            self.dlg.check_shp.toggled.connect(self.dlg.disable_gpkg)
+            self.dlg.check_gpkg.toggled.connect(self.dlg.disable_gpkg)
+            self.dlg.check_shp.toggled.connect(self.dlg.disable_shp)
+            self.dlg.check_gpkg.toggled.connect(self.dlg.disable_shp)
         self.dlg.show()
-        self.dlg.button_box.button(self.dlg.button_box.Ok).clicked.connect(
-            self.click_to_run
-        )
+        self.dlg.button_box.button(
+            self.dlg.button_box.Ok
+        ).clicked.connect(self.click_to_run)
 
     def click_to_run(self):
-        self.task = FutureLandUseSimulatorTask("Executing Future Land Use Simulation", self.dlg)
+        # Create a progress bar in the QGIS message bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        progress_msg: QgsMessageBarItem = (
+            self.iface.messageBar().createMessage("Simulation Progress: ")
+        )
+        progress_msg.layout().addWidget(self.progress_bar)
+        self.iface.messageBar().pushWidget(progress_msg, Qgis.Info)
+
+        # create the task and connect its signals
+        self.task = FutureLandUseSimulatorTask(
+            "Executing Future Land Use Simulation", self.dlg
+        )
+        self.task.progressChanged.connect(self.progress_bar.setValue)
+        self.task.taskCompleted.connect(self.iface.messageBar().clearWidgets)
+        self.task.taskCompleted.connect(self.dlg.show)
         QgsApplication.taskManager().addTask(self.task)
+        self.dlg.close()
