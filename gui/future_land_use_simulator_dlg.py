@@ -9,7 +9,7 @@
         begin                : 2023-03-24
         git sha              : $Format:%H$
         copyright            : (C) 2023 by GALUP
-        email                : koreyarsenault@ufl.edu
+        email                : chj.chen@ufl.edu
  ***************************************************************************/
 
 /***************************************************************************
@@ -28,8 +28,12 @@ from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'future_land_use_simulator_dialog_base.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(
+        os.path.dirname(__file__),
+        "future_land_use_simulator_dialog_base.ui"
+    )
+)
 
 
 class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
