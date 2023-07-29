@@ -3,20 +3,19 @@ from pathlib import Path
 
 from qgis.utils import iface
 from qgis.core import *
-from qgis.core import QgsTask, QgsProcessingParameterVectorDestination, QgsVectorLayer
-
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.core import (
+    QgsTask,
+    QgsVectorLayer,
+)
+from qgis.PyQt.QtWidgets import QMessageBox
 
 import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Polygon
-
 import rasterio
 from rasterio import mask
 from rasterstats import zonal_stats
-
 import pylusat
 from pylusat import zonal, geotools
 
@@ -25,9 +24,6 @@ import logging
 from . import config
 from . import lucis
 from . import ga
-
-from ..gui.future_land_use_simulator_dialog import FutureLandUseSimulatorDialog
-
 from ..gui.textlogger import QPlainTextEditLogger
 
 
@@ -40,20 +36,15 @@ class FutureLandUseSimulatorTask(QgsTask):
         super().__init__(description, QgsTask.CanCancel)
         self.gui = gui
 
-        self.logTextBox = QPlainTextEditLogger(self.gui.qpt_edit)
-        self.logTextBox.setFormatter(
-            logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
-        )
-        logging.getLogger().addHandler(self.logTextBox)
-        logging.getLogger().setLevel(logging.INFO)
+        # self.logTextBox = QPlainTextEditLogger(self.gui.qpt_edit)
+        # self.logTextBox.setFormatter(
+        #     logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
+        # )
+        # logging.getLogger().addHandler(self.logTextBox)
+        # logging.getLogger().setLevel(logging.INFO)
 
     def run(self):
         try:
-            prog = self.gui.progressBar
-
-            prog.setMinimum(0)
-            prog.setMaximum(100)
-
             temp_csv = self.gui.file_slopes.filePath()
             temp_df = pd.read_csv(temp_csv)
             temp_border_str = temp_df["TEMP_PER_BORDER"].values[0]
@@ -63,8 +54,8 @@ class FutureLandUseSimulatorTask(QgsTask):
             temp_water_str = temp_df["TEMP_PER_WATER"].values[0]
             temp_herb_str = temp_df["TEMP_PER_HERB"].values[0]
             temp_constraint = self.gui.le_temp.text()
-            prog.setValue(3)
-            logging.info("Reading temperature slopes")
+            self.setProgress(3)
+            # logging.info("Reading temperature slopes")
 
             config.TEMP_PER_BORDER = float(temp_border_str)
             config.TEMP_PER_AG = float(temp_ag_str)
@@ -78,13 +69,13 @@ class FutureLandUseSimulatorTask(QgsTask):
             ag_suit_path = self.gui.file_ag_suit.filePath()
             con_suit_path = self.gui.file_con_suit.filePath()
             urb_suit_path = self.gui.file_urb_suit.filePath()
-            prog.setValue(15)
+            self.setProgress(15)
 
             dist_name = self.gui.cb_district.currentText()
             proj_pop_txt = self.gui.le_proj_pop.text()
             pop_rast_path = self.gui.file_pop.filePath()
             region_name = self.gui.cb_region.currentText()
-            logging.info("Grabbing files")
+            # logging.info("Grabbing files")
 
             urb_ex = self.gui.check_urb_ex.checkState()
             ag_ex = self.gui.check_ag_ex.checkState()
@@ -115,13 +106,10 @@ class FutureLandUseSimulatorTask(QgsTask):
                 insuf_lu_list.append(2)
             if herb_insuf == 2:
                 insuf_lu_list.append(5)
-            insuf_lu = tuple(insuf_lu_list)
-            config.LU_INSUFFICIENT = insuf_lu
-            logging.info("Evaluating excess and insufficient land covers")
+            config.LU_INSUFFICIENT = tuple(insuf_lu_list)
+            # logging.info("Evaluating excess and insufficient land covers")
 
-            study_area_path = ""
-            logging.info("Entering study area analysis")
-
+            # logging.info("Entering study area analysis")
             if region_name == "N/A":
                 study_area_path = self.gui.file_area.filePath()
                 filename, file_extension = os.path.splitext(study_area_path)
@@ -162,13 +150,15 @@ class FutureLandUseSimulatorTask(QgsTask):
                 config.base_df = mgrs_gdf
 
                 row_dif_val = (
-                    config.base_df["right"].max() - config.base_df["right"].min()
+                    config.base_df["right"].max()
+                    - config.base_df["right"].min()
                 )
                 row_div_val = row_dif_val / 250 + 1
                 n_row = int(row_div_val)
 
                 col_dif_val = (
-                    config.base_df["bottom"].max() - config.base_df["bottom"].min()
+                    config.base_df["bottom"].max()
+                    - config.base_df["bottom"].min()
                 )
                 col_div_val = col_dif_val / 250 + 1
                 n_col = int(col_div_val)
@@ -179,7 +169,7 @@ class FutureLandUseSimulatorTask(QgsTask):
                 else:
                     pass
 
-                logging.info("Creating bounding box around study area")
+                # logging.info("Creating bounding box around study area")
 
                 mgrs_gdf = pylusat.zonal.zonal_stats_raster(
                     mgrs_gdf,
@@ -188,11 +178,15 @@ class FutureLandUseSimulatorTask(QgsTask):
                     stats_prefix="lc",
                     nodata=0,
                 )
-                logging.info("Calculating majority land cover per cell")
+                # logging.info("Calculating majority land cover per cell")
                 mgrs_gdf = pylusat.zonal.zonal_stats_raster(
-                    mgrs_gdf, pop_rast_path, stats="sum", stats_prefix="pop", nodata=0
+                    mgrs_gdf,
+                    pop_rast_path,
+                    stats="sum",
+                    stats_prefix="pop",
+                    nodata=0,
                 )
-                logging.info("Calculating sum of population per cell")
+                # logging.info("Calculating sum of population per cell")
                 pop_current_val = mgrs_gdf["pop_sum"].sum()
                 mgrs_gdf["pop_sum"].fillna(0, inplace=True)
                 mgrs_gdf["lc_majority"].fillna(0, inplace=True)
@@ -213,10 +207,14 @@ class FutureLandUseSimulatorTask(QgsTask):
                 current_lc_path = self.gui.file_lc.filePath()
                 lc_raster_data = rasterio.open(current_lc_path)
 
-                ghana_shp = (Path(__file__).parents[1]).joinpath('data/Ghana.shp')
+                ghana_shp = (Path(__file__).parents[1]).joinpath(
+                    "data/Ghana.shp"
+                )
                 region_gdf = gpd.read_file(ghana_shp)
                 reg_name_str = str(config.reg_dict[region_name])
-                reg_sel_gdf = region_gdf.loc[(region_gdf["REGION"] == reg_name_str)]
+                reg_sel_gdf = region_gdf.loc[
+                    (region_gdf["REGION"] == reg_name_str)
+                ]
                 # create tuple to grab bounds of selected district
                 boundary_tup = reg_sel_gdf.total_bounds
                 minx = boundary_tup[0]
@@ -224,7 +222,9 @@ class FutureLandUseSimulatorTask(QgsTask):
                 maxx = boundary_tup[2]
                 maxy = boundary_tup[3]
                 # create bounding box with district bondaries
-                poly = Polygon([(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)])
+                poly = Polygon(
+                    [(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)]
+                )
                 out_img_arr, out_transform_aff = rasterio.mask.mask(
                     dataset=lc_raster_data, shapes=[poly], crop=True
                 )
@@ -236,9 +236,13 @@ class FutureLandUseSimulatorTask(QgsTask):
                     pass
 
                 gdf = pylusat.geotools.gridify(
-                    reg_sel_gdf, cell_x=250, cell_y=250, n_cols=None, n_rows=None
+                    reg_sel_gdf,
+                    cell_x=250,
+                    cell_y=250,
+                    n_cols=None,
+                    n_rows=None,
                 )
-                logging.info("Creating bounding box around study area")
+                # logging.info("Creating bounding box around study area")
                 zonal_output = zonal_stats(
                     vectors=gdf,
                     raster=out_img_arr,
@@ -256,9 +260,13 @@ class FutureLandUseSimulatorTask(QgsTask):
                 )
 
                 gdf = pylusat.zonal.zonal_stats_raster(
-                    gdf, pop_rast_path, stats="sum", stats_prefix="pop", nodata=0
+                    gdf,
+                    pop_rast_path,
+                    stats="sum",
+                    stats_prefix="pop",
+                    nodata=0,
                 )
-                logging.info("Calculating sum of population per cell")
+                # logging.info("Calculating sum of population per cell")
 
                 pop_current_val = gdf["pop_sum"].sum()
                 gdf["pop_sum"].fillna(0, inplace=True)
@@ -296,11 +304,15 @@ class FutureLandUseSimulatorTask(QgsTask):
                 current_lc_path = self.gui.file_lc.filePath()
                 lc_raster_data = rasterio.open(current_lc_path)
 
-                ghana_shp = (Path(__file__).parents[1]).joinpath('data/Ghana.shp')
+                ghana_shp = (Path(__file__).parents[1]).joinpath(
+                    "data/Ghana.shp"
+                )
                 dist_gdf = gpd.read_file(ghana_shp)
                 dist_name_str = str(config.dist_dict[dist_name])
-                dist_sel_gdf = dist_gdf.loc[(dist_gdf["DISTRICT"] == dist_name_str)]
-                prog.setValue(26)
+                dist_sel_gdf = dist_gdf.loc[
+                    (dist_gdf["DISTRICT"] == dist_name_str)
+                ]
+                self.setProgress(26)
 
                 # create tuple to grab bounds of selected district
                 boundary_tup = dist_sel_gdf.total_bounds
@@ -310,8 +322,10 @@ class FutureLandUseSimulatorTask(QgsTask):
                 maxy = boundary_tup[3]
 
                 # create bounding box with district bondaries
-                poly = Polygon([(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)])
-                prog.setValue(28)
+                poly = Polygon(
+                    [(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)]
+                )
+                self.setProgress(28)
                 out_img_arr, out_transform_aff = rasterio.mask.mask(
                     dataset=lc_raster_data, shapes=[poly], crop=True
                 )
@@ -323,7 +337,11 @@ class FutureLandUseSimulatorTask(QgsTask):
                 else:
                     pass
                 gdf = pylusat.geotools.gridify(
-                    dist_sel_gdf, cell_x=250, cell_y=250, n_cols=None, n_rows=None
+                    dist_sel_gdf,
+                    cell_x=250,
+                    cell_y=250,
+                    n_cols=None,
+                    n_rows=None,
                 )
                 zonal_output = zonal_stats(
                     vectors=gdf,
@@ -339,12 +357,16 @@ class FutureLandUseSimulatorTask(QgsTask):
                     columns={"majority": "lc_majority"},
                     inplace=True,
                 )
-                logging.info("Calculating majority land cover per cell")
+                # logging.info("Calculating majority land cover per cell")
 
                 gdf = pylusat.zonal.zonal_stats_raster(
-                    gdf, pop_rast_path, stats="sum", stats_prefix="pop", nodata=0
+                    gdf,
+                    pop_rast_path,
+                    stats="sum",
+                    stats_prefix="pop",
+                    nodata=0,
                 )
-                logging.info("Calculating sum of population per cell")
+                # logging.info("Calculating sum of population per cell")
 
                 pop_current_val = gdf["pop_sum"].sum()
                 gdf["pop_sum"].fillna(0, inplace=True)
@@ -380,23 +402,34 @@ class FutureLandUseSimulatorTask(QgsTask):
                 )
 
                 self.gui.file_area.setEnabled(False)
-                prog.setValue(37)
+                self.setProgress(37)
 
-            mgrsbb = study_area_path
-            prog.setValue(40)
+            self.setProgress(40)
 
             mgrs_gdf = pylusat.zonal.zonal_stats_raster(
-                mgrs_gdf, ag_suit_path, stats="mean", stats_prefix="ag", nodata=0
+                mgrs_gdf,
+                ag_suit_path,
+                stats="mean",
+                stats_prefix="ag",
+                nodata=0,
             )
             mgrs_gdf = pylusat.zonal.zonal_stats_raster(
-                mgrs_gdf, con_suit_path, stats="mean", stats_prefix="con", nodata=0
+                mgrs_gdf,
+                con_suit_path,
+                stats="mean",
+                stats_prefix="con",
+                nodata=0,
             )
             mgrs_gdf = pylusat.zonal.zonal_stats_raster(
-                mgrs_gdf, urb_suit_path, stats="mean", stats_prefix="urb", nodata=0
+                mgrs_gdf,
+                urb_suit_path,
+                stats="mean",
+                stats_prefix="urb",
+                nodata=0,
             )
-            logging.info("Calculating average suitability per cell")
+            # logging.info("Calculating average suitability per cell")
 
-            prog.setValue(45)
+            self.setProgress(45)
 
             mgrs_gdf.rename(
                 columns={
@@ -411,7 +444,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.base_df = mgrs_gdf
 
             mask = mgrs_gdf["current_lu"].isin([1, 2, 3, 5])
-            prog.setValue(55)
+            self.setProgress(55)
 
             mgrs_gdf["ag_pref"] = pd.cut(
                 mgrs_gdf["ag_suit"],
@@ -437,11 +470,9 @@ class FutureLandUseSimulatorTask(QgsTask):
                 ).urban_conflict(),
                 axis=1,
             )
-            logging.info("Masking rasters for specific land cover classes")
+            # logging.info("Masking rasters for specific land cover classes")
 
-            prog.setValue(60)
-
-            mgrs_gdf.loc[(mgrs_gdf["current_lu"] == 3)]
+            self.setProgress(60)
 
             if self.isCanceled():
                 self.cancel()
@@ -454,7 +485,9 @@ class FutureLandUseSimulatorTask(QgsTask):
             proj_pop_txt = self.gui.le_proj_pop.text()
             config.PPL_PER_URB = 514
             config.PPL_CURRENT = pop_current_val
-            config.PPL_GROWTH = int(float(proj_pop_txt)) - int(float(pop_current_val))
+            config.PPL_GROWTH = int(float(proj_pop_txt)) - int(
+                float(pop_current_val)
+            )
             config.min_conf = 0
             config.max_conf = config.GRID_C * config.GRID_R
 
@@ -463,7 +496,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.CON_SUIT = "con_suit"  # conservation suitability
             config.URB_SUIT = "urb_suit"  # urban suitability
             config.CURRENT_LU = "current_lu"  # current land use
-            prog.setValue(75)
+            self.setProgress(75)
 
             # --- GA parameters ---
             cxpb_str = self.gui.le_cxpb.text()
@@ -474,11 +507,11 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.GEN_NUM = float(gen_str)
             pop_str = self.gui.le_init_pop.text()
             config.POP_SIZE = int(pop_str)
-            logging.info("Reading GA parameters")
+            # logging.info("Reading GA parameters")
 
             # --- Initial sampling probability for each land use ---
 
-            prog.setValue(90)
+            self.setProgress(90)
             ag_low = float(self.gui.le_ag_low.text())
             ag_med = float(self.gui.le_ag_med.text())
             ag_high = float(self.gui.le_ag_high.text())
@@ -502,8 +535,6 @@ class FutureLandUseSimulatorTask(QgsTask):
             else:
                 pass
 
-            self.gui.scrollArea.setWidgetResizable(True)
-
             dist_text = self.gui.cb_district.currentText()
             dist_text_str = str(dist_text)
 
@@ -520,7 +551,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.base_df[new_lu] = ""
             config.base_df[new_lu] = ga_result[0]
 
-            prog.setValue(100)
+            self.setProgress(100)
 
             return True
 
@@ -529,36 +560,43 @@ class FutureLandUseSimulatorTask(QgsTask):
             return False
 
     def finished(self, result):
-        if result:
-            project = QgsProject.instance()
-            shp = self.gui.check_shp
-            gpk = self.gui.check_gpk
+        if self.isCanceled():
+            # if it was canceled by the user
+            QgsMessageLog.logMessage(
+                message=f"Canceled simulation task.",
+                level=Qgis.Warning,
+            )
+            return
+        elif not result:
+            # if there was an error
+            QMessageBox.critical(
+                iface.mainWindow(),
+                "Future land use simulation error",
+                f"The following error occurred:\n"
+                f"{self.exception.__class__.__name__}: {self.exception}",
+            )
+            return
 
-            shp_state = shp.checkState()
-            gpk_state = gpk.checkState()
+        project = QgsProject.instance()
+        shp = self.gui.check_shp
+        gpkg = self.gui.check_gpkg
 
-            if self.isCanceled():
-                self.cancel()
-                return False
-            else:
-                pass
+        shp_state = shp.checkState()
+        gpkg_state = gpkg.checkState()
 
-            if shp_state == 2:
-                output_file = self.gui.output.filePath()
-                config.base_df.to_file(output_file, driver="ESRI Shapefile")
-                lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
-                project.addMapLayer(lyr)
-            elif gpk_state == 2:
-                output_file = self.gui.output.filePath()
-                config.base_df.to_file(output_file, driver="GPKG")
-                iface.addVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
-            else:
-                pass
-        else:
-            pass
+        if shp_state == 2:
+            output_file = self.gui.output.filePath()
+            config.base_df.to_file(output_file, driver="ESRI Shapefile")
+            lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
+            project.addMapLayer(lyr)
+        elif gpkg_state == 2:
+            output_file = self.gui.output.filePath()
+            config.base_df.to_file(output_file, driver="GPKG")
+            iface.addVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
 
     def cancel(self):
         QgsMessageLog.logMessage(
-            "{name} was canceled".format(name=self.description()), level=Qgis.Info
+            "{name} was canceled".format(name=self.description()),
+            level=Qgis.Info,
         )
         super().cancel()

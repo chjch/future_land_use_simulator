@@ -1,5 +1,3 @@
-from functools import partial
-
 import numpy as np
 import pandas as pd
 
@@ -12,8 +10,6 @@ import jenkspy
 
 from .scenario import Scenario
 from . import config
-
-# from .config import *
 from .lucis import LandUse
 
 
@@ -111,7 +107,10 @@ def mut_grid(ind, n_row=30, n_col=30, lu_in=(3,), lu_ex=(1,), indpb=0.1):
     # mut_ic = [1, 4]  # example column index
 
     ind_padded = np.pad(
-        ind.reshape((n_row, n_col)), ((1, 1), (1, 1)), "constant", constant_values=0
+        ind.reshape((n_row, n_col)),
+        ((1, 1), (1, 1)),
+        "constant",
+        constant_values=0
     )
     for r, c in zip(mut_ir, mut_ic):
         ind_padded[r : r + 3, c : c + 3] = np.random.choice(lu_in, 1)[0]
@@ -170,7 +169,6 @@ def evaluate(individual):
     # --------------------------constraints------------------------------ #
     # 1. Temperature: calculate temperature difference
     # for study area comment out border, index 1,6
-    config.temp_slope
     num_lu_diff = (
         pd.Series(individual).value_counts()
         - get_current_lu(config.base_df).value_counts()
