@@ -22,22 +22,26 @@
  ***************************************************************************/
 """
 
-import os
+from pathlib import Path
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.gui import QgisInterface
 
-# This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
+import pandas as pd
+
+from ..lib import config
+
 FORM_CLASS, _ = uic.loadUiType(
-    os.path.join(
-        os.path.dirname(__file__),
-        "future_land_use_simulator_dialog_base.ui"
+    str(
+        Path(__file__).resolve().parent / 
+        "future_land_use_simulator_dlg_base.ui"
     )
 )
 
 
 class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
+    def __init__(self, iface: QgisInterface, parent=None):
         """Constructor."""
         super(FutureLandUseSimulatorDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
@@ -46,3 +50,102 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.iface = iface
+
+    def populate_district(self):
+        reg_name = self.cb_region.currentText()
+        if reg_name == "N/A":
+            self.cb_district.clear()
+            self.cb_district.setEditable(False)
+        elif reg_name == "Ahafo":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.ahafo)
+        elif reg_name == "Ashanti":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.ashanti)
+        elif reg_name == "Bono":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.bono)
+        elif reg_name == "Bono East":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.bono_east)
+        elif reg_name == "Central":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.central)
+        elif reg_name == "Eastern":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.eastern)
+        elif reg_name == "Greater Accra":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.accra)
+        elif reg_name == "North East":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.ne)
+        elif reg_name == "Northern":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.north)
+        elif reg_name == "Oti":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.oti)
+        elif reg_name == "Savannah":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.sav)
+        elif reg_name == "Upper East":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.ue)
+        elif reg_name == "Upper West":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.uw)
+        elif reg_name == "Volta":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.volta)
+        elif reg_name == "Western":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.western)
+        elif reg_name == "Western North":
+            self.cb_district.clear()
+            self.cb_district.addItems(config.west_north)
+        else:
+            self.cb_district.clear()
+
+    def read_pop_project(self):
+        yr = self.cb_year.currentText()
+        region = self.cb_region.currentText()
+        district = self.cb_district.currentText()
+
+        csv_path = Path(__file__).parents[1] / "data/un_pop_projection.csv"
+        pop_df = pd.read_csv(csv_path)
+
+        if yr in config.yr_selectable and district:
+            if district == "Entire Region":
+                pop_project = pop_df.loc[
+                    pop_df["reg_prop"] == region, f"{yr}_dif"
+                ].sum()
+            else:  # district specific
+                pop_project = pop_df.loc[
+                    pop_df["dist"] == district, f"{yr}_dif"
+                ].values[0]
+            self.le_proj_pop.setText(str(pop_project))
+
+    def disable_gpkg(self):
+        shp_state = self.check_shp.checkState()
+        if shp_state == 0:
+            self.check_gpkg.setCheckable(True)
+        elif shp_state == 2:
+            self.check_gpkg.setCheckable(False)
+
+
+    def disable_shp(self):
+        gpkg_state = self.check_gpkg.checkState()
+        if gpkg_state == 0:
+            self.check_shp.setCheckable(True)
+        elif gpkg_state == 2:
+            self.check_shp.setCheckable(False)
+
+
+    def disable_study_area(self):
+        district_txt = self.cb_district.currentText()
+        if district_txt == "N/A":
+            self.file_area.setEnabled(True)
+        else:
+            self.file_area.setEnabled(False)
