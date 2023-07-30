@@ -228,6 +228,13 @@ class FutureLandUseSimulator:
             self.dlg.cb_year.currentTextChanged.connect(
                 self.dlg.read_pop_project
             )
+
+            self.dlg.cb_year.currentTextChanged.connect(
+                self.dlg.disable_yr
+            )
+            self.dlg.le_year.textChanged.connect(
+                self.dlg.disable_yr
+            )
             self.dlg.check_shp.toggled.connect(self.dlg.disable_gpkg)
             self.dlg.check_gpkg.toggled.connect(self.dlg.disable_gpkg)
             self.dlg.check_shp.toggled.connect(self.dlg.disable_shp)

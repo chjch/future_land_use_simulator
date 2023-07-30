@@ -149,3 +149,10 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
             self.file_area.setEnabled(True)
         else:
             self.file_area.setEnabled(False)
+
+    def disable_yr(self):
+        yr_drop = self.cb_year.currentText()
+        if yr_drop == " ":
+            self.le_year.setEnabled(True)
+        else:
+            self.le_year.setEnabled(False)
