@@ -235,10 +235,6 @@ class FutureLandUseSimulator:
             self.dlg.le_year.textChanged.connect(
                 self.dlg.disable_yr
             )
-            self.dlg.check_shp.toggled.connect(self.dlg.disable_gpkg)
-            self.dlg.check_gpkg.toggled.connect(self.dlg.disable_gpkg)
-            self.dlg.check_shp.toggled.connect(self.dlg.disable_shp)
-            self.dlg.check_gpkg.toggled.connect(self.dlg.disable_shp)
         self.dlg.show()
         self.dlg.button_box.button(
             self.dlg.button_box.Ok

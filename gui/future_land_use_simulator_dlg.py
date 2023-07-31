@@ -127,22 +127,6 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
                 ].values[0]
             self.le_proj_pop.setText(str(pop_project))
 
-    def disable_gpkg(self):
-        shp_state = self.check_shp.checkState()
-        if shp_state == 0:
-            self.check_gpkg.setCheckable(True)
-        elif shp_state == 2:
-            self.check_gpkg.setCheckable(False)
-
-
-    def disable_shp(self):
-        gpkg_state = self.check_gpkg.checkState()
-        if gpkg_state == 0:
-            self.check_shp.setCheckable(True)
-        elif gpkg_state == 2:
-            self.check_shp.setCheckable(False)
-
-
     def disable_study_area(self):
         district_txt = self.cb_district.currentText()
         if district_txt == "N/A":
