@@ -54,7 +54,7 @@ temp_slope = pd.Series(
     index=np.arange(0, 6),
 )
 
-test = ["N/A"]
+no_region_or_district = ["N/A"]
 
 ahafo = [
     "Entire Region",

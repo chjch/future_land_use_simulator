@@ -7,7 +7,7 @@ name=Future Land Use Simulator
 qgisMinimumVersion=3.0
 description=Future Land Use Simulator
 version=0.1
-author=GALUP
+author=GALUP Team
 email=chj.chen@ufl.edu
 
 about=A QGIS plugin that employs a genetic algorithm to generate future land-use scenarios based on population growth and land surface temperature constraints.
