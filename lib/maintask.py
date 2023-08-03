@@ -66,7 +66,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             prog.setValue(3)
             logging.info("Reading temperature slopes")
 
-            config.TEMP_PER_BORDER = float(temp_border_str)
+
             config.TEMP_PER_AG = float(temp_ag_str)
             config.TEMP_PER_CON = float(temp_con_str)
             config.TEMP_PER_URB = float(temp_urb_str)
@@ -117,7 +117,7 @@ class FutureLandUseSimulatorTask(QgsTask):
                 insuf_lu_list.append(5)
             insuf_lu = tuple(insuf_lu_list)
             config.LU_INSUFFICIENT = insuf_lu
-            logging.info("Evaluating excess and insufficient land covers")
+            loggi ng.info("Evaluating excess and insufficient land covers")
 
             study_area_path = ""
             logging.info("Entering study area analysis")
