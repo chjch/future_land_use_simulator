@@ -578,18 +578,18 @@ class FutureLandUseSimulatorTask(QgsTask):
             return
 
         project = QgsProject.instance()
-        shp = self.gui.check_shp
-        gpkg = self.gui.check_gpkg
+        
+        output_path=self.gui.output.filePath()
+        split_path = os.path.splitext(output_path)
+        print(split_path)
+        ext = split_path[1]
 
-        shp_state = shp.checkState()
-        gpkg_state = gpkg.checkState()
-
-        if shp_state == 2:
+        if ext == '.shp':
             output_file = self.gui.output.filePath()
             config.base_df.to_file(output_file, driver="ESRI Shapefile")
             lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
             project.addMapLayer(lyr)
-        elif gpkg_state == 2:
+        elif ext == '.gpkg':
             output_file = self.gui.output.filePath()
             config.base_df.to_file(output_file, driver="GPKG")
             iface.addVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
