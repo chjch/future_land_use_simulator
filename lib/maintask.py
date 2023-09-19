@@ -6,6 +6,10 @@ from qgis.core import *
 from qgis.core import (
     QgsTask,
     QgsVectorLayer,
+    QgsProject,
+    QgsCategorizedSymbolRenderer,
+    QgsRendererCategory,
+    QgsFillSymbol
 )
 from qgis.PyQt.QtWidgets import QMessageBox
 
@@ -106,17 +110,17 @@ class FutureLandUseSimulatorTask(QgsTask):
                 insuf_lu_list.append(2)
             if herb_insuf == 2:
                 insuf_lu_list.append(5)
-<<<<<<< HEAD
+
             insuf_lu = tuple(insuf_lu_list)
             config.LU_INSUFFICIENT = insuf_lu
-            loggi ng.info("Evaluating excess and insufficient land covers")
+            logging.info("Evaluating excess and insufficient land covers")
 
             study_area_path = ""
             logging.info("Entering study area analysis")
-=======
+
             config.LU_INSUFFICIENT = tuple(insuf_lu_list)
             # logging.info("Evaluating excess and insufficient land covers")
->>>>>>> 021089df53f509b0bfa31e09b174453988315c1a
+
 
             # logging.info("Entering study area analysis")
             if region_name == "N/A":
@@ -597,6 +601,27 @@ class FutureLandUseSimulatorTask(QgsTask):
             output_file = self.gui.output.filePath()
             config.base_df.to_file(output_file, driver="ESRI Shapefile")
             lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
+            new_lu = self.gui.le_out_field.text()
+
+            categorized = QgsCategorizedSymbolRenderer()
+            categorized.setClassAttribute(new_lu)
+            cat1 = QgsRendererCategory('1', QgsFillSymbol.createSimple(
+                {'color': '#d1f15d', 'outline_color': 'rgba(0,0,0,0)'}), 'Agriculture')
+            cat2 = QgsRendererCategory('2', QgsFillSymbol.createSimple(
+                {'color': '#216022', 'outline_color': 'rgba(0,0,0,0)'}), 'Conservation')
+            cat3 = QgsRendererCategory('3', QgsFillSymbol.createSimple(
+                {'color': '#ce2903', 'outline_color': 'rgba(0,0,0,0)'}), 'Urban')
+            cat4 = QgsRendererCategory('4', QgsFillSymbol.createSimple(
+                {'color': '#3633ff', 'outline_color': 'rgba(0,0,0,0)'}), 'Water')
+            cat5 = QgsRendererCategory('5', QgsFillSymbol.createSimple(
+                {'color': '#e8e515', 'outline_color': 'rgba(0,0,0,0)'}), 'Herbaceous')
+            categorized.addCategory(cat1)
+            categorized.addCategory(cat2)
+            categorized.addCategory(cat3)
+            categorized.addCategory(cat4)
+            categorized.addCategory(cat5)
+            lyr.setRenderer(categorized)
+
             project.addMapLayer(lyr)
         elif ext == '.gpkg':
             output_file = self.gui.output.filePath()
