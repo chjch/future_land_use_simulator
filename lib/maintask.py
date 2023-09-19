@@ -9,7 +9,7 @@ from qgis.core import (
     QgsProject,
     QgsCategorizedSymbolRenderer,
     QgsRendererCategory,
-    QgsFillSymbol
+    QgsFillSymbol,
 )
 from qgis.PyQt.QtWidgets import QMessageBox
 
@@ -60,7 +60,6 @@ class FutureLandUseSimulatorTask(QgsTask):
             temp_constraint = self.gui.le_temp.text()
             self.setProgress(3)
             # logging.info("Reading temperature slopes")
-
 
             config.TEMP_PER_AG = float(temp_ag_str)
             config.TEMP_PER_CON = float(temp_con_str)
@@ -120,7 +119,6 @@ class FutureLandUseSimulatorTask(QgsTask):
 
             config.LU_INSUFFICIENT = tuple(insuf_lu_list)
             # logging.info("Evaluating excess and insufficient land covers")
-
 
             # logging.info("Entering study area analysis")
             if region_name == "N/A":
@@ -591,13 +589,13 @@ class FutureLandUseSimulatorTask(QgsTask):
             return
 
         project = QgsProject.instance()
-        
-        output_path=self.gui.output.filePath()
+
+        output_path = self.gui.output.filePath()
         split_path = os.path.splitext(output_path)
         print(split_path)
         ext = split_path[1]
 
-        if ext == '.shp':
+        if ext == ".shp":
             output_file = self.gui.output.filePath()
             config.base_df.to_file(output_file, driver="ESRI Shapefile")
             lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
@@ -605,16 +603,41 @@ class FutureLandUseSimulatorTask(QgsTask):
 
             categorized = QgsCategorizedSymbolRenderer()
             categorized.setClassAttribute(new_lu)
-            cat1 = QgsRendererCategory('1', QgsFillSymbol.createSimple(
-                {'color': '#d1f15d', 'outline_color': 'rgba(0,0,0,0)'}), 'Agriculture')
-            cat2 = QgsRendererCategory('2', QgsFillSymbol.createSimple(
-                {'color': '#216022', 'outline_color': 'rgba(0,0,0,0)'}), 'Conservation')
-            cat3 = QgsRendererCategory('3', QgsFillSymbol.createSimple(
-                {'color': '#ce2903', 'outline_color': 'rgba(0,0,0,0)'}), 'Urban')
-            cat4 = QgsRendererCategory('4', QgsFillSymbol.createSimple(
-                {'color': '#3633ff', 'outline_color': 'rgba(0,0,0,0)'}), 'Water')
-            cat5 = QgsRendererCategory('5', QgsFillSymbol.createSimple(
-                {'color': '#e8e515', 'outline_color': 'rgba(0,0,0,0)'}), 'Herbaceous')
+            cat1 = QgsRendererCategory(
+                "1",
+                QgsFillSymbol.createSimple(
+                    {"color": "#d1f15d", "outline_color": "rgba(0,0,0,0)"}
+                ),
+                "Agriculture",
+            )
+            cat2 = QgsRendererCategory(
+                "2",
+                QgsFillSymbol.createSimple(
+                    {"color": "#216022", "outline_color": "rgba(0,0,0,0)"}
+                ),
+                "Conservation",
+            )
+            cat3 = QgsRendererCategory(
+                "3",
+                QgsFillSymbol.createSimple(
+                    {"color": "#ce2903", "outline_color": "rgba(0,0,0,0)"}
+                ),
+                "Urban",
+            )
+            cat4 = QgsRendererCategory(
+                "4",
+                QgsFillSymbol.createSimple(
+                    {"color": "#3633ff", "outline_color": "rgba(0,0,0,0)"}
+                ),
+                "Water",
+            )
+            cat5 = QgsRendererCategory(
+                "5",
+                QgsFillSymbol.createSimple(
+                    {"color": "#e8e515", "outline_color": "rgba(0,0,0,0)"}
+                ),
+                "Herbaceous",
+            )
             categorized.addCategory(cat1)
             categorized.addCategory(cat2)
             categorized.addCategory(cat3)
@@ -623,7 +646,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             lyr.setRenderer(categorized)
 
             project.addMapLayer(lyr)
-        elif ext == '.gpkg':
+        elif ext == ".gpkg":
             output_file = self.gui.output.filePath()
             config.base_df.to_file(output_file, driver="GPKG")
             iface.addVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
