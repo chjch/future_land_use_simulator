@@ -215,7 +215,7 @@ class FutureLandUseSimulator:
             self.dlg.cb_region.currentTextChanged.connect(
                 self.dlg.populate_district
             )
-            self.dlg.cb_district.currentTextChanged.connect(
+            self.dlg.cb_region.currentTextChanged.connect(
                 self.dlg.disable_study_area
             )
             # cb_region, cb_district, and cb_year all trigger read_pop_project
@@ -228,11 +228,16 @@ class FutureLandUseSimulator:
             self.dlg.cb_year.currentTextChanged.connect(
                 self.dlg.read_pop_project
             )
-
-            self.dlg.cb_year.currentTextChanged.connect(
-                self.dlg.disable_yr
+            self.dlg.cb_region.currentTextChanged.connect(
+                self.dlg.pop_project_clean
             )
-            self.dlg.le_year.textChanged.connect(
+            self.dlg.cb_year.currentTextChanged.connect(
+                self.dlg.pop_project_clean
+            )
+            self.dlg.file_area.fileChanged.connect(
+                self.dlg.disable_populate_region
+            )
+            self.dlg.cb_year.currentTextChanged.connect(
                 self.dlg.disable_yr
             )
         self.dlg.show()

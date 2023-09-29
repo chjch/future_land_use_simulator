@@ -26,7 +26,11 @@ from pathlib import Path
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
-from qgis.gui import QgisInterface
+from qgis.gui import (
+    QgisInterface,
+    QgsFileWidget,
+    QgsFilterLineEdit,
+)
 
 import pandas as pd
 
@@ -34,7 +38,7 @@ from ..lib import config
 
 FORM_CLASS, _ = uic.loadUiType(
     str(
-        Path(__file__).resolve().parent / 
+        Path(__file__).resolve().parent /
         "future_land_use_simulator_dlg_base.ui"
     )
 )
@@ -127,16 +131,33 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
                 ].values[0]
             self.le_proj_pop.setText(str(pop_project))
 
+    def pop_project_clean(self):
+        region = self.cb_region.currentText()
+        yr_drop = self.cb_year.currentText()
+        if yr_drop == "":
+            self.le_proj_pop.clear()
+        elif region == "N/A":
+            self.le_proj_pop.clear()
+
     def disable_study_area(self):
-        district_txt = self.cb_district.currentText()
-        if district_txt == "N/A":
+        region = self.cb_region.currentText()
+        if region == "N/A" or region == "":
             self.file_area.setEnabled(True)
         else:
+            self.file_area.setFilePath("")
             self.file_area.setEnabled(False)
+
+    def disable_populate_region(self):
+        study_area = self.file_area.filePath()
+        if study_area == "":
+            self.cb_region.setEnabled(True)
+        else:
+            self.cb_region.setCurrentText("N/A")
 
     def disable_yr(self):
         yr_drop = self.cb_year.currentText()
-        if yr_drop == " ":
+        if yr_drop == "":
             self.le_year.setEnabled(True)
         else:
+            self.le_year.clear()
             self.le_year.setEnabled(False)
