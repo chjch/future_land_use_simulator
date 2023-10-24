@@ -160,3 +160,7 @@ cython_debug/
 .idea/
 
 # QGIS plugin specific
+
+
+# MacOS specific
+.DS_Store
