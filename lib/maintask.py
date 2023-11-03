@@ -536,9 +536,9 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.INIT_PROB_CON = {1: con_low, 2: con_med, 3: con_high}
             config.INIT_PROB_URB = {1: urb_low, 2: urb_med, 3: urb_high}
             sample_str = self.gui.le_init_sample.text()
-            config.INIT_SAMPLE_SIZE = int(
+            config.INIT_CHANGE_PERCENT = float(
                 sample_str
-            )  # number of cells changing its land use
+            )  # land use cells changing percent
 
             if self.isCanceled():
                 self.cancel()

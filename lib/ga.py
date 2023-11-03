@@ -7,6 +7,7 @@ import deap.creator
 import deap.base
 import deap.tools
 import jenkspy
+import math
 
 from .scenario import Scenario
 from . import config
@@ -24,9 +25,9 @@ def nb_classify(sr, num_class=3):
     )
 
 
-def random_scn(df, landuse, lu_col, n=3000):
+def random_scn(df, landuse, lu_col, n):
     df = config.base_df
-    n = config.INIT_SAMPLE_SIZE
+    n = math.floor(config.INIT_CHANGE_PERCENT / 100 * config.GRID_R * config.GRID_C)
     lu_col = config.CURRENT_LU
     if landuse == 0:  # copy the original scenario
         return df[lu_col].values
@@ -220,7 +221,7 @@ toolbox.register(
     df=config.base_df,
     landuse=np.random.choice(4, p=[0.4, 0.2, 0.2, 0.2]),
     lu_col=config.CURRENT_LU,
-    n=config.INIT_SAMPLE_SIZE,
+    n=config.INIT_CHANGE_PERCENT,
 )
 
 toolbox.register(

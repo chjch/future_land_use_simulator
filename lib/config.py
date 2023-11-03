@@ -40,7 +40,7 @@ POP_SIZE = 100  # population size
 INIT_PROB_AG = {1: 0.1, 2: 0.2, 3: 0.7}
 INIT_PROB_CON = {1: 0.1, 2: 0.1, 3: 0.8}
 INIT_PROB_URB = {1: 0.1, 2: 0.3, 3: 0.6}
-INIT_SAMPLE_SIZE = 3000  # number of cells changing its land use
+INIT_CHANGE_PERCENT = 10  # land use cells changing percent
 
 temp_slope = pd.Series(
     (

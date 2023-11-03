@@ -65,7 +65,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideRight</enum>
@@ -1078,10 +1078,10 @@ QComboBox {
              </sizepolicy>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sample of total population evaluated&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percent of cells with an altered land use&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Initial Sample Size:</string>
+             <string>Initial Change Percent (0-100):</string>
             </property>
            </widget>
           </item>
@@ -1094,7 +1094,7 @@ QComboBox {
              </sizepolicy>
             </property>
             <property name="text">
-             <string>3000</string>
+             <string/>
             </property>
            </widget>
           </item>
