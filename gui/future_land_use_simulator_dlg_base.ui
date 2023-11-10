@@ -1094,7 +1094,7 @@ QComboBox {
              </sizepolicy>
             </property>
             <property name="text">
-             <string/>
+             <string>10</string>
             </property>
            </widget>
           </item>

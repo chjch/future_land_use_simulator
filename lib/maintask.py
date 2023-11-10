@@ -36,11 +36,82 @@ class FutureLandUseSimulatorTask(QgsTask):
 
     FUTURE_SCENARIO = "FUTURE_SCENARIO"
 
-    def __init__(self, description, gui):
+    def __init__(
+        self, description,
+        file_slopes,
+        le_temp,
+        file_lc,
+        file_ag_suit,
+        file_con_suit,
+        file_urb_suit,
+        cb_district,
+        le_proj_pop,
+        file_pop,
+        cb_region,
+        check_urb_ex,
+        check_ag_ex,
+        check_con_ex,
+        check_herb_ex,
+        check_urb_insuf,
+        check_ag_insuf,
+        check_con_insuf,
+        check_herb_insuf,
+        file_area,
+        le_cxpb,
+        le_mutpb,
+        le_gen,
+        le_init_pop,
+        le_ag_low,
+        le_ag_med,
+        le_ag_high,
+        le_con_low,
+        le_con_med,
+        le_con_high,
+        le_urb_low,
+        le_urb_med,
+        le_urb_high,
+        le_init_sample,
+        le_out_field,
+        output,
+    ):
         super().__init__(description, QgsTask.CanCancel)
-        self.gui = gui
+        self.file_slopes = file_slopes
+        self.le_temp = le_temp
+        self.file_lc = file_lc
+        self.file_ag_suit = file_ag_suit
+        self.file_con_suit = file_con_suit
+        self.file_urb_suit = file_urb_suit
+        self.cb_district = cb_district
+        self.le_proj_pop = le_proj_pop
+        self.file_pop = file_pop
+        self.cb_region = cb_region
+        self.check_urb_ex = check_urb_ex
+        self.check_ag_ex = check_ag_ex
+        self.check_con_ex = check_con_ex
+        self.check_herb_ex = check_herb_ex
+        self.check_urb_insuf = check_urb_insuf
+        self.check_ag_insuf = check_ag_insuf
+        self.check_con_insuf = check_con_insuf
+        self.check_herb_insuf = check_herb_insuf
+        self.file_area = file_area
+        self.le_cxpb = le_cxpb
+        self.le_mutpb = le_mutpb
+        self.le_gen = le_gen
+        self.le_init_pop = le_init_pop
+        self.le_ag_low = le_ag_low
+        self.le_ag_med = le_ag_med
+        self.le_ag_high = le_ag_high
+        self.le_con_low = le_con_low
+        self.le_con_med = le_con_med
+        self.le_con_high = le_con_high
+        self.le_urb_low = le_urb_low
+        self.le_urb_med = le_urb_med
+        self.le_urb_high = le_urb_high
+        self.le_init_sample = le_init_sample
+        self.le_out_field = le_out_field
+        self.output = output
 
-        # self.logTextBox = QPlainTextEditLogger(self.gui.qpt_edit)
+        # self.logTextBox = QPlainTextEditLogger(self.qpt_edit)
         # self.logTextBox.setFormatter(
         #     logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
         # )
@@ -49,7 +120,7 @@ class FutureLandUseSimulatorTask(QgsTask):
 
     def run(self):
         try:
-            temp_csv = self.gui.file_slopes.filePath()
+            temp_csv = self.file_slopes.filePath()
             temp_df = pd.read_csv(temp_csv)
             temp_border_str = temp_df["TEMP_PER_BORDER"].values[0]
             temp_ag_str = temp_df["TEMP_PER_AG"].values[0]
@@ -57,7 +128,7 @@ class FutureLandUseSimulatorTask(QgsTask):
             temp_urb_str = temp_df["TEMP_PER_URB"].values[0]
             temp_water_str = temp_df["TEMP_PER_WATER"].values[0]
             temp_herb_str = temp_df["TEMP_PER_HERB"].values[0]
-            temp_constraint = self.gui.le_temp.text()
+            temp_constraint = self.le_temp.text()
             self.setProgress(3)
             # logging.info("Reading temperature slopes")
 
@@ -68,22 +139,22 @@ class FutureLandUseSimulatorTask(QgsTask):
             config.TEMP_PER_HERB = float(temp_herb_str)
             config.TEMP_TARGET = float(temp_constraint)
 
-            current_lc_path = self.gui.file_lc.filePath()
-            ag_suit_path = self.gui.file_ag_suit.filePath()
-            con_suit_path = self.gui.file_con_suit.filePath()
-            urb_suit_path = self.gui.file_urb_suit.filePath()
+            current_lc_path = self.file_lc.filePath()
+            ag_suit_path = self.file_ag_suit.filePath()
+            con_suit_path = self.file_con_suit.filePath()
+            urb_suit_path = self.file_urb_suit.filePath()
             self.setProgress(15)
 
-            dist_name = self.gui.cb_district.currentText()
-            proj_pop_txt = self.gui.le_proj_pop.text()
-            pop_rast_path = self.gui.file_pop.filePath()
-            region_name = self.gui.cb_region.currentText()
+            dist_name = self.cb_district.currentText()
+            proj_pop_txt = self.le_proj_pop.text()
+            pop_rast_path = self.file_pop.filePath()
+            region_name = self.cb_region.currentText()
             # logging.info("Grabbing files")
 
-            urb_ex = self.gui.check_urb_ex.checkState()
-            ag_ex = self.gui.check_ag_ex.checkState()
-            con_ex = self.gui.check_con_ex.checkState()
-            herb_ex = self.gui.check_herb_ex.checkState()
+            urb_ex = self.check_urb_ex.checkState()
+            ag_ex = self.check_ag_ex.checkState()
+            con_ex = self.check_con_ex.checkState()
+            herb_ex = self.check_herb_ex.checkState()
             excess_lu_list = []
             if urb_ex == 2:
                 excess_lu_list.append(3)
@@ -96,10 +167,10 @@ class FutureLandUseSimulatorTask(QgsTask):
             excess_lu = tuple(excess_lu_list)
             config.LU_EXCESS = excess_lu
 
-            urb_insuf = self.gui.check_urb_insuf.checkState()
-            ag_insuf = self.gui.check_ag_insuf.checkState()
-            con_insuf = self.gui.check_con_insuf.checkState()
-            herb_insuf = self.gui.check_herb_insuf.checkState()
+            urb_insuf = self.check_urb_insuf.checkState()
+            ag_insuf = self.check_ag_insuf.checkState()
+            con_insuf = self.check_con_insuf.checkState()
+            herb_insuf = self.check_herb_insuf.checkState()
             insuf_lu_list = []
             if urb_insuf == 2:
                 insuf_lu_list.append(3)
@@ -122,7 +193,7 @@ class FutureLandUseSimulatorTask(QgsTask):
 
             # logging.info("Entering study area analysis")
             if region_name == "N/A":
-                study_area_path = self.gui.file_area.filePath()
+                study_area_path = self.file_area.filePath()
                 filename, file_extension = os.path.splitext(study_area_path)
                 if file_extension == ".shp":
                     gdf = gpd.read_file(study_area_path)
@@ -213,9 +284,9 @@ class FutureLandUseSimulatorTask(QgsTask):
                     index=np.arange(1, 6),
                 )
 
-                self.gui.file_area.setEnabled(True)
+                self.file_area.setEnabled(True)
             elif dist_name == "Entire Region":
-                current_lc_path = self.gui.file_lc.filePath()
+                current_lc_path = self.file_lc.filePath()
                 lc_raster_data = rasterio.open(current_lc_path)
 
                 ghana_shp = (Path(__file__).parents[1]).joinpath(
@@ -310,9 +381,9 @@ class FutureLandUseSimulatorTask(QgsTask):
                     index=np.arange(0, 6),
                 )
 
-                self.gui.file_area.setEnabled(False)
+                self.file_area.setEnabled(False)
             else:
-                current_lc_path = self.gui.file_lc.filePath()
+                current_lc_path = self.file_lc.filePath()
                 lc_raster_data = rasterio.open(current_lc_path)
 
                 ghana_shp = (Path(__file__).parents[1]).joinpath(
@@ -412,7 +483,7 @@ class FutureLandUseSimulatorTask(QgsTask):
                     index=np.arange(0, 6),
                 )
 
-                self.gui.file_area.setEnabled(False)
+                self.file_area.setEnabled(False)
                 self.setProgress(37)
 
             self.setProgress(40)
@@ -493,7 +564,7 @@ class FutureLandUseSimulatorTask(QgsTask):
 
             config.GRID_R = n_row
             config.GRID_C = n_col
-            proj_pop_txt = self.gui.le_proj_pop.text()
+            proj_pop_txt = self.le_proj_pop.text()
             config.PPL_PER_URB = 514
             config.PPL_CURRENT = pop_current_val
             config.PPL_GROWTH = int(float(proj_pop_txt)) - int(
@@ -510,32 +581,32 @@ class FutureLandUseSimulatorTask(QgsTask):
             self.setProgress(75)
 
             # --- GA parameters ---
-            cxpb_str = self.gui.le_cxpb.text()
+            cxpb_str = self.le_cxpb.text()
             config.CXPB = float(cxpb_str)
-            mut_str = self.gui.le_mutpb.text()
+            mut_str = self.le_mutpb.text()
             config.MUTPB = float(mut_str)
-            gen_str = self.gui.le_gen.text()
+            gen_str = self.le_gen.text()
             config.GEN_NUM = float(gen_str)
-            pop_str = self.gui.le_init_pop.text()
+            pop_str = self.le_init_pop.text()
             config.POP_SIZE = int(pop_str)
             # logging.info("Reading GA parameters")
 
             # --- Initial sampling probability for each land use ---
 
             self.setProgress(90)
-            ag_low = float(self.gui.le_ag_low.text())
-            ag_med = float(self.gui.le_ag_med.text())
-            ag_high = float(self.gui.le_ag_high.text())
-            con_low = float(self.gui.le_con_low.text())
-            con_med = float(self.gui.le_con_med.text())
-            con_high = float(self.gui.le_con_high.text())
-            urb_low = float(self.gui.le_urb_low.text())
-            urb_med = float(self.gui.le_urb_med.text())
-            urb_high = float(self.gui.le_urb_high.text())
+            ag_low = float(self.le_ag_low.text())
+            ag_med = float(self.le_ag_med.text())
+            ag_high = float(self.le_ag_high.text())
+            con_low = float(self.le_con_low.text())
+            con_med = float(self.le_con_med.text())
+            con_high = float(self.le_con_high.text())
+            urb_low = float(self.le_urb_low.text())
+            urb_med = float(self.le_urb_med.text())
+            urb_high = float(self.le_urb_high.text())
             config.INIT_PROB_AG = {1: ag_low, 2: ag_med, 3: ag_high}
             config.INIT_PROB_CON = {1: con_low, 2: con_med, 3: con_high}
             config.INIT_PROB_URB = {1: urb_low, 2: urb_med, 3: urb_high}
-            sample_str = self.gui.le_init_sample.text()
+            sample_str = self.le_init_sample.text()
             config.INIT_CHANGE_PERCENT = float(
                 sample_str
             )  # land use cells changing percent
@@ -546,12 +617,12 @@ class FutureLandUseSimulatorTask(QgsTask):
             else:
                 pass
 
-            dist_text = self.gui.cb_district.currentText()
+            dist_text = self.cb_district.currentText()
             dist_text_str = str(dist_text)
 
             ga_result = ga.main()
 
-            new_lu = self.gui.le_out_field.text()
+            new_lu = self.le_out_field.text()
 
             if self.isCanceled():
                 self.cancel()
@@ -590,16 +661,16 @@ class FutureLandUseSimulatorTask(QgsTask):
 
         project = QgsProject.instance()
 
-        output_path = self.gui.output.filePath()
+        output_path = self.output.filePath()
         split_path = os.path.splitext(output_path)
         print(split_path)
         ext = split_path[1]
 
         if ext == ".shp":
-            output_file = self.gui.output.filePath()
+            output_file = self.output.filePath()
             config.base_df.to_file(output_file, driver="ESRI Shapefile")
             lyr = QgsVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
-            new_lu = self.gui.le_out_field.text()
+            new_lu = self.le_out_field.text()
 
             categorized = QgsCategorizedSymbolRenderer()
             categorized.setClassAttribute(new_lu)
@@ -647,7 +718,7 @@ class FutureLandUseSimulatorTask(QgsTask):
 
             project.addMapLayer(lyr)
         elif ext == ".gpkg":
-            output_file = self.gui.output.filePath()
+            output_file = self.output.filePath()
             config.base_df.to_file(output_file, driver="GPKG")
             iface.addVectorLayer(output_file, self.FUTURE_SCENARIO, "ogr")
 

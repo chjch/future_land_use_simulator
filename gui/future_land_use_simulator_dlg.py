@@ -26,15 +26,25 @@ from pathlib import Path
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtWidgets import QProgressBar, QDialog
 from qgis.gui import (
     QgisInterface,
     QgsFileWidget,
     QgsFilterLineEdit,
+    QgsMessageBarItem,
 )
-
+from qgis.core import (
+    QgsProject,
+    QgsApplication,
+    Qgis,
+    QgsTask,
+)
+from qgis.PyQt.QtCore import Qt
+from typing import Optional
 import pandas as pd
 
 from ..lib import config
+from ..lib.maintask import FutureLandUseSimulatorTask
 
 FORM_CLASS, _ = uic.loadUiType(
     str(
@@ -55,6 +65,54 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         self.iface = iface
+
+        self.progress_bar: Optional[QProgressBar] = None  # will be set in click_to_run()
+        self.task: Optional[QgsTask] = None  # will be set in click_to_run()
+
+        # create connection for OK and Cancel button
+        self.tabWidget.setCurrentIndex(0)
+        self.button_box.button(
+            self.button_box.Ok
+        ).setText("Run")  # change button text to Run default is Ok
+        self.button_box.button(
+            self.button_box.Cancel
+        ).setText("Close")  # change button text to Close default is Cancel
+        self.button_box.button(
+            self.button_box.Ok
+        ).clicked.connect(self.click_to_run)
+        self.button_box.button(
+            self.button_box.Cancel
+        ).clicked.connect(self.close)
+
+        # create dynamic connection with some buttons
+        self.cb_region.currentTextChanged.connect(
+            self.populate_district
+        )
+        self.cb_region.currentTextChanged.connect(
+            self.disable_study_area
+        )
+        # cb_region, cb_district, and cb_year all trigger read_pop_project
+        self.cb_district.currentTextChanged.connect(
+            self.read_pop_project
+        )
+        self.cb_region.currentTextChanged.connect(
+            self.read_pop_project
+        )
+        self.cb_year.currentTextChanged.connect(
+            self.read_pop_project
+        )
+        self.cb_region.currentTextChanged.connect(
+            self.pop_project_clean
+        )
+        self.cb_year.currentTextChanged.connect(
+            self.pop_project_clean
+        )
+        self.file_area.fileChanged.connect(
+            self.disable_populate_region
+        )
+        self.cb_year.currentTextChanged.connect(
+            self.disable_yr
+        )
 
     def populate_district(self):
         reg_name = self.cb_region.currentText()
@@ -161,3 +219,59 @@ class FutureLandUseSimulatorDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             self.le_year.clear()
             self.le_year.setEnabled(False)
+
+    def click_to_run(self):
+        # Create a progress bar in the QGIS message bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        progress_msg: QgsMessageBarItem = (
+            self.iface.messageBar().createMessage("Simulation Progress: ")
+        )
+        progress_msg.layout().addWidget(self.progress_bar)
+        self.iface.messageBar().pushWidget(progress_msg, Qgis.Info)
+
+        # create the task and connect its signals
+        self.task = FutureLandUseSimulatorTask(
+            "Executing Future Land Use Simulation",
+            self.file_slopes,
+            self.le_temp,
+            self.file_lc,
+            self.file_ag_suit,
+            self.file_con_suit,
+            self.file_urb_suit,
+            self.cb_district,
+            self.le_proj_pop,
+            self.file_pop,
+            self.cb_region,
+            self.check_urb_ex,
+            self.check_ag_ex,
+            self.check_con_ex,
+            self.check_herb_ex,
+            self.check_urb_insuf,
+            self.check_ag_insuf,
+            self.check_con_insuf,
+            self.check_herb_insuf,
+            self.file_area,
+            self.le_cxpb,
+            self.le_mutpb,
+            self.le_gen,
+            self.le_init_pop,
+            self.le_ag_low,
+            self.le_ag_med,
+            self.le_ag_high,
+            self.le_con_low,
+            self.le_con_med,
+            self.le_con_high,
+            self.le_urb_low,
+            self.le_urb_med,
+            self.le_urb_high,
+            self.le_init_sample,
+            self.le_out_field,
+            self.output,
+        )
+        self.task.progressChanged.connect(self.progress_bar.setValue)
+        self.task.taskCompleted.connect(self.iface.messageBar().clearWidgets)
+        self.task.taskCompleted.connect(self.show)
+        QgsApplication.taskManager().addTask(self.task)
+        self.close()

@@ -58,8 +58,7 @@ class FutureLandUseSimulator:
         # Save reference to the QGIS interface
         self.iface = iface
         self.dlg: Optional[FutureLandUseSimulatorDialog] = None  # will be set in run()
-        self.progress_bar: Optional[QProgressBar] = None # will be set in run()
-        self.task: Optional[QgsTask] = None  # will be set in run()
+
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -78,10 +77,6 @@ class FutureLandUseSimulator:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr("&FutureLandUseSimulator")
-
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -183,8 +178,6 @@ class FutureLandUseSimulator:
             callback=self.run,
             parent=self.iface.mainWindow(),
         )
-        # will be set False in run()
-        self.first_start = True
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -199,69 +192,7 @@ class FutureLandUseSimulator:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start:
-            self.first_start = False
+        if not self.dlg:
             self.dlg = FutureLandUseSimulatorDialog(self.iface)
-            self.dlg.tabWidget.setCurrentIndex(0)
-            self.dlg.button_box.button(
-                self.dlg.button_box.Ok
-            ).setText("Run")  # change button text to Run default is Ok
-            self.dlg.button_box.button(
-                self.dlg.button_box.Cancel
-            ).setText("Close")  # change button text to Close default is Cancel
-            self.dlg.button_box.button(
-                self.dlg.button_box.Cancel
-            ).clicked.connect(self.dlg.close)
-            self.dlg.cb_region.currentTextChanged.connect(
-                self.dlg.populate_district
-            )
-            self.dlg.cb_region.currentTextChanged.connect(
-                self.dlg.disable_study_area
-            )
-            # cb_region, cb_district, and cb_year all trigger read_pop_project
-            self.dlg.cb_district.currentTextChanged.connect(
-                self.dlg.read_pop_project
-            )
-            self.dlg.cb_region.currentTextChanged.connect(
-                self.dlg.read_pop_project
-            )
-            self.dlg.cb_year.currentTextChanged.connect(
-                self.dlg.read_pop_project
-            )
-            self.dlg.cb_region.currentTextChanged.connect(
-                self.dlg.pop_project_clean
-            )
-            self.dlg.cb_year.currentTextChanged.connect(
-                self.dlg.pop_project_clean
-            )
-            self.dlg.file_area.fileChanged.connect(
-                self.dlg.disable_populate_region
-            )
-            self.dlg.cb_year.currentTextChanged.connect(
-                self.dlg.disable_yr
-            )
-        self.dlg.show()
-        self.dlg.button_box.button(
-            self.dlg.button_box.Ok
-        ).clicked.connect(self.click_to_run)
-
-    def click_to_run(self):
-        # Create a progress bar in the QGIS message bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        progress_msg: QgsMessageBarItem = (
-            self.iface.messageBar().createMessage("Simulation Progress: ")
-        )
-        progress_msg.layout().addWidget(self.progress_bar)
-        self.iface.messageBar().pushWidget(progress_msg, Qgis.Info)
-
-        # create the task and connect its signals
-        self.task = FutureLandUseSimulatorTask(
-            "Executing Future Land Use Simulation", self.dlg
-        )
-        self.task.progressChanged.connect(self.progress_bar.setValue)
-        self.task.taskCompleted.connect(self.iface.messageBar().clearWidgets)
-        self.task.taskCompleted.connect(self.dlg.show)
-        QgsApplication.taskManager().addTask(self.task)
-        self.dlg.close()
+        # show the dialog
+        self.dlg.open()
